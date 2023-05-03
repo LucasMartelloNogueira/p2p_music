@@ -1,0 +1,8 @@
+sockets python
+
+metodos básicos
+
+* send (bytes, enncoding): manda bytes
+* recv (buffer) -> bytes: recebe bytes
+* bind ((HOST, PORT)): reserva socket no server
+* listen (): escuta por msgs
