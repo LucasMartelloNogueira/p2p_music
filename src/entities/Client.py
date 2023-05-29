@@ -1,36 +1,88 @@
+from src.constants import Constants
+
 import socket
+import sys
+
+
+"""
+possiveis msgs do client:
+
+"OP/CREATE_REGISTER"
+"OP/CONNECT"
+"""
 
 class Client:
-    def __init__(self, name="fulano") -> None:
+
+    def __init__(self, name="fulano", connection_port=None) -> None:
         self.name = name
         self.ip = socket.gethostbyname(socket.gethostname())
-        self.connection = None
+        self.connection_port = connection_port
+        self.socket = None
+
+        self.start()
 
 
-    def connect_to_server(self, server_ip, server_port):
-        self.connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.connection.connect((server_ip, server_port))
+    def first_connection(self, server_ip=Constants.localhost_ip):
+        """
+        connect to the server for the first time
 
-        # while True:
-        #     msg = input("digite sua msg: ")
-            
-        #     if len(msg) == 0:
-        #         break
-            
-        #     self.connection.send(bytes(msg, "utf-8"))
-        #     print(self.connection.recv(1024).decode("utf-8"))
+        automaticaly creates a register in the server and receives a port user for a socket connection
 
-        # self.end_connection()
+        :param server_ip: ip of the server
+        """
+        first_connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        first_connection.connect((server_ip, Constants.server_port))
 
-
-
-    def register(self):
-        msg = "{'name': {}, 'ip': {}, 'port': {}}".format(self.name, self.ip, self.port)
-        self.connection.send(bytes(msg, "utf-8"))
+        first_conn_msg = f"OP/CREATE_REGISTER/{self.ip}/{self.name}"
+        first_connection.send(bytes(first_conn_msg, "utf-8"))
+        self.connection_port = int(first_connection.recv(Constants.msg_max_size).decode("utf-8"))
+        first_connection.close()
 
     
-    def view_register():
+    def connect_to_server(self, server_ip=Constants.localhost_ip):
+        connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        connection.connect((server_ip, Constants.server_port))
+
+        conn_msg = f"OP/CONNECT/{self.connection_port}"
+        connection.send(bytes(conn_msg, "utf-8"))
+
+        server_response = connection.recv(Constants.msg_max_size).decode("utf-8")
+        if server_response == "OP/ACCEPT_CONNECTION":
+            self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.socket.connect((server_ip, self.connection_port))
+            
+
+    def start(self):
+        # primeira conexao
+        # recebendo do servidor a porta que sera usada para conexao de fato
+        if self.connection_port is None:
+            self.first_connection()
+        
+        self.connect_to_server()
+
+        with self.socket as sc:
+            while True:
+                msg = input("digite a sua msg: ")
+                if len(msg) == 0:
+                    break
+                sc.send(bytes(msg, "utf-8"))
+                server_msg = sc.recv(1024).decode("utf-8")
+                print(f"msg do server: {server_msg}")
+        
+    
+    def view_server_registers(self):
         pass
+        # msg = "DATA/VIEW_REGISTERS"
+        # msg_size = sys.getsizeof(msg)
+        # ctrl_msg = f"CTRL/{msg_size}"
+
+        # self.socket.send(bytes(ctrl_msg, "utf-8"))
+        # response = self.socket.recv(1024).decode("utf-8")
+
+        # if response == f"ACK/{ctrl_msg}":
+        #     self.socket.send(bytes(msg, "utf-8"))
+        #     client_registers = self.socket.recv(1024).decode("utf-8")
+        #     client_registers.split("/")
 
 
     def end_connection(self):
@@ -38,33 +90,5 @@ class Client:
 
     
 
-    
-    def cli(self):
-        while True:
-
-            print("** select your comand **")
-            print("1 - connect to server")
-            print("2 - create register")
-            print("3 - close connection")
-
-            command = int(input("enter a command: "))
-
-            # commands = {
-            #     1: self.connect_to_server, 
-            #     2: self.register,
-            #     3: self.end_connection
-            # }
-
-            # if (command not in range(1, 4)):
-            #     print("comando invalido")
-            # else:
-            #     if (command == 1):
-            #         self.connect_to_server(self.ip, 8080)
-                
-            #     if (command == 2):
-            #         self.register()
-                
-            #     if ()
-
-            
+client = Client()        
 

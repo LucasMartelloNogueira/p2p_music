@@ -6,3 +6,37 @@ metodos básicos
 * recv (buffer) -> bytes: recebe bytes
 * bind ((HOST, PORT)): reserva socket no server
 * listen (): escuta por msgs
+
+* Coisas que a debora falou:
+
+- servidor precisa aceitar multiplas conexoes
+- clientes precisam aceitar multiplas conexoes
+
+* ideia para arquitetura:
+
+- um socket só para receber inicialmente clientes
+- esse socket vai informar qual a port sera usada para a conexao entre o servidor e cliete
+- dps que a porta tiver sido informada, varias outras conexoes poderao ser feitas
+
+
+
+---------------------------------------------------------------------------------
+
+* formato das mensagens que serao passadas via sockets
+
+    <identificador>/valor
+
+os identificadores podem ser:
+- DATA: significa que a msg contem dados no campo valor
+- OP: significa que os valores no campo valor são o nome de operações que devem ser realizadas por quem recebeu a msg
+- SIZE: indica o tamanho da proxima msg. Este tipo de msg deve ser usada antes de msgs do tipo data que tenham tamanho acima de 256 bytes, para evitar perda de dados da msg
+
+---------------------------------------------------------------------------------
+
+
+
+
+* quando cliente pede para ver registros
+
+- primeiro deve estabelecer uma conexão
+- cliente manda msg de contro
