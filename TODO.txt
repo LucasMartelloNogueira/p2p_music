@@ -1,0 +1,10 @@
+1- arumar client e server nas classes de entities
+    - criar métodos abstratos
+
+2 - implementar métodos pedidos na descrição do trabalho
+  - conferir quais no classroom
+
+3 - ajeitar main para client e sever com args diferentes (para executar um unico arquivo)
+
+4 - criar branch nova para fazer o push para repo remoto
+
