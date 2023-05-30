@@ -8,6 +8,7 @@ import sys
 # Project imports
 from abc import ABC, abstractmethod
 from src.constants import Constants
+from src.entities.Connection import Connection
 
 # third party import
 import pandas as pd
@@ -40,33 +41,59 @@ class Server(IServer):
 
         self.register_filename = register_filename
         self.dataframe: pd.DataFrame = self.get_client_dataframe()
+        self.active_connections = []
 
         self.start()
 
     
     def get_client_dataframe(self):
-        if os.path.exists(os.path.join(os.getcwd(), f"/assets/csv_files/{self.register_filename}")):
-            return pd.DataFrame(columns=["ip", "port", "name"])
+        filepath = os.path.join(os.getcwd(), "assets", "csv_files", self.register_filename)
+        if os.path.exists(filepath):
+            return pd.read_csv("assets\\csv_files\\clients.csv")
         else:
-            # TODO: criar funcao que cria arquivo no diretorio: <root>/assets/csv_files/<self.register_filename>
-            pass
+            df = pd.DataFrame(columns=["ip", "port", "name"])
+            df.to_csv(filepath, index=False)
+            return df
 
 
     def register_client(self, ip, port, name):
-        new_row = {"ip": [ip], "port": [port], "name": [name]}
-        self.dataframe = pd.concat([self.dataframe, pd.DataFrame(new_row)])
-        self.dataframe.to_csv("clients.csv", index=False)
+        new_row = {"ip": ip, "port": port, "name": name}
+        new_line_index = self.dataframe.shape[0]
+        self.dataframe.loc[new_line_index, :] = new_row
+        self.dataframe.to_csv("assets\\csv_files\\clients.csv", index=False)
+        return True
+
+
+    def check_client_connection(self, ip, port):
+        # ok: tem registro e n ta ativo
+        # erro: n tem registro
+        # erro: tem registro mas ta ativo
+        filt = (self.dataframe["ip"] == ip) & (self.dataframe["port"] == int(port))
+        df = self.dataframe.loc[filt]
+        print("dataframe")
+        print(df)
+        print(f"df.shape = {df.shape}")
+        
+        if df.shape[0] == 0:
+            return "ERROR/CLIENT_NOT_REGISTRED"
+
+        for conn in self.active_connections:
+            if conn.client_ip == ip and conn.client.port == port:
+                return "ERROR/CLIENT_ONLINE"
+        
+        return "OP/ACCEPT_CONNECTION"
 
 
     def client_connection(self, ip, port):
-
-        # TODO: falta consultar o dataframe para ver se o cliente esta registrado, se n estiver, enviar msg de erro "ERROR/NOT_REGISTERED"
-
         client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         client_socket.bind((ip, port))
         client_socket.listen()
         connection, addr = client_socket.accept()
-        print(f"connectou com o cliente - ip:{addr} / porta: {port}")
+        new_conn = Connection(ip, port, addr[0], addr[1])
+        self.active_connections.append(new_conn)
+        print(f"connectou com o cliente")
+        print(f"Servidor: ip = {ip} / porta = {port}")
+        print(f"cliente: ip = {addr[0]} / porta = {addr[1]}")
         
         with connection as conn:
             while True:
@@ -98,8 +125,14 @@ class Server(IServer):
                 connection.close()
 
             if operation == "CONNECT":
-                client_port = int(data[2])
-                thread = threading.Thread(target=self.client_connection, args=(address[0], client_port))
-                connection.send(bytes("OP/ACCEPT_CONNECTION", "utf-8"))
-                connection.close()
-                thread.start()
+                msg = self.check_client_connection(address[0], data[2])
+
+                if msg == "OP/ACCEPT_CONNECTION":
+                    client_port = int(data[2])
+                    msg = f"{msg}/{client_port}"
+                    thread = threading.Thread(target=self.client_connection, args=(address[0], client_port))
+                    thread.start()
+                
+                connection.send(bytes(msg, "utf-8"))
+
+            connection.close()

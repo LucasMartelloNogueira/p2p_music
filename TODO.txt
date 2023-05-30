@@ -8,3 +8,12 @@
 
 4 - criar branch nova para fazer o push para repo remoto
 
+-----------------------------------------------------------------
+** Testes **
+
+0- testar main.py com flags diferentes para servidor e cliente
+1- testar conexao um cliente e um servidor (ok)
+2- testar criação do arquivo de registros (ok)
+3- testar conexao com mais de um cliente (ok)
+4- testar conexao com cliente que já esta cadastrado
+5- testar erro se cliente tenta fazer login sem registro (ok)

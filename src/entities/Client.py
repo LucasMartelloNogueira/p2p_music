@@ -36,6 +36,7 @@ class Client:
         first_conn_msg = f"OP/CREATE_REGISTER/{self.ip}/{self.name}"
         first_connection.send(bytes(first_conn_msg, "utf-8"))
         self.connection_port = int(first_connection.recv(Constants.msg_max_size).decode("utf-8"))
+        print("criou registro")
         first_connection.close()
 
     
@@ -47,9 +48,12 @@ class Client:
         connection.send(bytes(conn_msg, "utf-8"))
 
         server_response = connection.recv(Constants.msg_max_size).decode("utf-8")
-        if server_response == "OP/ACCEPT_CONNECTION":
+        if server_response.split("/")[1] == "ACCEPT_CONNECTION":
+            print(f"connection accepted: {server_response}")
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.socket.connect((server_ip, self.connection_port))
+        else:
+            print(f"não foi possivel conectar ao servidor = {server_response}")
             
 
     def start(self):
@@ -60,14 +64,17 @@ class Client:
         
         self.connect_to_server()
 
-        with self.socket as sc:
-            while True:
-                msg = input("digite a sua msg: ")
-                if len(msg) == 0:
-                    break
-                sc.send(bytes(msg, "utf-8"))
-                server_msg = sc.recv(1024).decode("utf-8")
-                print(f"msg do server: {server_msg}")
+        if self.socket is not None:
+            with self.socket as sc:
+                while True:
+                    msg = input("digite a sua msg: ")
+                    if len(msg) == 0:
+                        break
+                    sc.send(bytes(msg, "utf-8"))
+                    server_msg = sc.recv(1024).decode("utf-8")
+                    print(f"msg do server: {server_msg}")
+
+            self.socket.close()
         
     
     def view_server_registers(self):
@@ -87,8 +94,3 @@ class Client:
 
     def end_connection(self):
         self.connection.close()
-
-    
-
-client = Client()        
-
