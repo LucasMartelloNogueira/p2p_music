@@ -30,10 +30,14 @@ os identificadores podem ser:
 - DATA: significa que a msg contem dados no campo valor
 - OP: significa que os valores no campo valor são o nome de operações que devem ser realizadas por quem recebeu a msg
 - SIZE: indica o tamanho da proxima msg. Este tipo de msg deve ser usada antes de msgs do tipo data que tenham tamanho acima de 256 bytes, para evitar perda de dados da msg
+- ERROR: significa que uma operacao errou
 
 ---------------------------------------------------------------------------------
 
+* Quando o cliente vai se registar, ele manda a msg: 
+- OP/CREATE_REGISTER/{self.ip}/{self.name}
 
+* e o servidor 
 
 
 * quando cliente pede para ver registros
