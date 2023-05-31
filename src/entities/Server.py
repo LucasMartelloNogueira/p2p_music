@@ -34,18 +34,19 @@ class Server(IServer):
 
     def __init__(self, ip=Constants.localhost_ip, current_free_port=Constants.server_port+1, register_filename="clients.csv") -> None:
         super().__init__()
-        self.entry_port : int = Constants.server_port
-        self.ip : str = ip
-        self.current_free_port : int = current_free_port
-        self.entry_socket : socket.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
+        self.entry_port = Constants.server_port
+        self.ip = ip
+        self.entry_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.register_filename = register_filename
-        self.dataframe: pd.DataFrame = self.get_client_dataframe()
+        self.dataframe = self.get_client_dataframe()
+        self.current_free_port = self.get_current_free_port()
         self.active_connections = []
 
         self.start()
+ 
+    def get_current_free_port(self):
+        return self.entry_port + self.dataframe.shape[0] + 1
 
-    
     def get_client_dataframe(self):
         filepath = os.path.join(os.getcwd(), "assets", "csv_files", self.register_filename)
         if os.path.exists(filepath):
@@ -57,11 +58,18 @@ class Server(IServer):
 
 
     def register_client(self, ip, port, name):
-        new_row = {"ip": ip, "port": port, "name": name}
+        new_row = {"ip": ip, "port": int(port), "name": name}
         new_line_index = self.dataframe.shape[0]
         self.dataframe.loc[new_line_index, :] = new_row
         self.dataframe.to_csv("assets\\csv_files\\clients.csv", index=False)
-        return True
+        
+        print("************************************")
+        print("CLIENTE CADASTRADO COM SUCESSO")
+        print("dados do cliente")
+        print(f"nome: {name}")
+        print(f"ip: {ip}")
+        print(f"porta: {port}")
+        print("************************************\n")
 
 
     def check_client_connection(self, ip, port):
@@ -70,15 +78,12 @@ class Server(IServer):
         # erro: tem registro mas ta ativo
         filt = (self.dataframe["ip"] == ip) & (self.dataframe["port"] == int(port))
         df = self.dataframe.loc[filt]
-        print("dataframe")
-        print(df)
-        print(f"df.shape = {df.shape}")
         
         if df.shape[0] == 0:
             return "ERROR/CLIENT_NOT_REGISTRED"
 
         for conn in self.active_connections:
-            if conn.client_ip == ip and conn.client.port == port:
+            if conn.client_ip == ip and conn.client_port == port:
                 return "ERROR/CLIENT_ONLINE"
         
         return "OP/ACCEPT_CONNECTION"
@@ -89,29 +94,56 @@ class Server(IServer):
         client_socket.bind((ip, port))
         client_socket.listen()
         connection, addr = client_socket.accept()
-        new_conn = Connection(ip, port, addr[0], addr[1])
-        self.active_connections.append(new_conn)
-        print(f"connectou com o cliente")
+        current_conection = Connection(ip, port, addr[0], addr[1])
+        self.active_connections.append(current_conection)
+        
+        print("************************************")
+        print(f"CONECTADO COM O CLIENTE")
+        print("dados da conexão")
         print(f"Servidor: ip = {ip} / porta = {port}")
         print(f"cliente: ip = {addr[0]} / porta = {addr[1]}")
+        print("************************************\n")
         
         with connection as conn:
             while True:
-                data = conn.recv(Constants.msg_max_size)
-                if not data:
-                    break
-                print(data.decode("utf-8"))
-                conn.send(data)
+                try:
+                    data = conn.recv(Constants.msg_max_size).decode("utf-8")
+                    if data:
+                        # print(f"DATA = {data}")
+                        data_list = data.split("/")
+                        if data_list[1] == "END_CONNECTION":
+                            print("************************************")
+                            print("ENCERRANDO CONEXÃO")
+                            print("dados da conexão encerrada")
+                            print(f"cliente: ip = {current_conection.client_ip} / porta = {current_conection.client_port}")
+                            print("************************************\n")
 
-        connection.close()
+                            # TODO: remover cliente do dataframe de clientes online
+                            self.active_connections.remove(current_conection)
+                            connection.close()
+                            break
+
+                except ConnectionResetError:
+                    print("************************************")
+                    print("CONEXAO PERDIDA")
+                    print("dados do cliente")
+                    print(f"cliente: ip = {current_conection.client_ip} / porta = {current_conection.client_port}")
+                    print("************************************\n")
+                    connection.close()
+                    break
+
+                except TypeError:
+                    print("************************************")
+                    print(f"nenhuma msg recebida de: {current_conection.client_ip} / porta = {current_conection.client_port}")
+                    print("************************************\n")
 
 
     def start(self):
-        print(f"comecando o server na porta: {self.entry_port}")
         self.entry_socket.bind((self.ip, self.entry_port))
         self.entry_socket.listen()
 
         while True:
+            print(f"escutando por clientes na porta: {self.entry_port}")
             connection, address = self.entry_socket.accept()
             data = connection.recv(Constants.msg_max_size).decode("utf-8").split("/")
             operation = data[1]
