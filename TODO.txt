@@ -1,19 +1,24 @@
-1- arumar client e server nas classes de entities
-    - criar métodos abstratos
+-----------------------------------------------------------------
+** Casos de uso **
 
-2 - implementar métodos pedidos na descrição do trabalho
-  - conferir quais no classroom
+* Cliente 
+1- criação de conexão entre clientes e servidor por meio de sockets (ok)
+2- o cliente deve ser capaz de se registrar no servidor (ok)
+3- o cliente deve ser capaz de pedir encerramento da conexão (ok)
 
-3 - ajeitar main para client e sever com args diferentes (para executar um unico arquivo)
+* Servidor
+1- O servidor deve ser capaz de aceitar varios clientes simultaniamente (ok)
+2- O servidor deve armazenar em uma tabela os clientes e as músicas que eles possuem
+3- O servidor deve mandar uma mensagem informando que o registro de um cliente foi feito (ok)
+4- O Servidor deve, caso o usuário já esteja cadastrado e tente realizar um cadastro, informar que ele já está cadastrado (ok)
+  - impossível de acontecer no modelo adotado, o servidor que escolhe a porta que vai utilizar utilizada pelo cliente
+5- O Servidor deve enviar ao um cliente a lista de nós conectados e as músicas que eles possuem
+6- O servidor deve, caso o cliente deseje encerrar uma conexão, responder ao pedido de encerramento e fechar o socket
 
-4 - criar branch nova para fazer o push para repo remoto
+
+
 
 -----------------------------------------------------------------
-** Testes **
+BUGS:
 
-0- testar main.py com flags diferentes para servidor e cliente
-1- testar conexao um cliente e um servidor (ok)
-2- testar criação do arquivo de registros (ok)
-3- testar conexao com mais de um cliente (ok)
-4- testar conexao com cliente que já esta cadastrado
-5- testar erro se cliente tenta fazer login sem registro (ok)
+- nenhum bug conhecido no momento
