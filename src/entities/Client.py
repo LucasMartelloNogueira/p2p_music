@@ -73,9 +73,10 @@ class Client:
                     print("************************************")
                     print("SELECIONE UMA OPÇÃO")
                     print("1 - encerrar conexao")
+                    print("2 - registrar musica")
                     print("************************************")
 
-                    options = {1: self.end_connection}
+                    options = {1: self.end_connection, 2: self.register_song}
                     opt = int(input("digite a opção escolhida: "))
 
                     if opt in options:
@@ -112,7 +113,35 @@ class Client:
 
     def register_song(self):
         # TODO: implement this
-        pass
+        print("************************************")
+        song_name = input("digite o nome da musica que deseja registrar: ")
+        print("************************************\n")
+        msg = f"OP/REGISTER_SONG/{song_name}"
+
+        self.socket.send(bytes(msg, "utf-8"))
+        response = self.socket.recv(Constants.msg_max_size).decode("utf-8")
+        data = response.split("/")
+
+        if data[0] == "ERROR":
+            if data[1] == "SONG_ALREADY_REGISTRED":
+                print("************************************")
+                print("ERRO: MUSICA JÁ CADASTRADA")
+                print("************************************\n")
+            
+            if data[1] == "UNEXPECTED_ERROR":
+                print("************************************")
+                print("ERRO: NÃO FOI POSSIVEL REGISTAR MUSICA / ERRO INESPERADO")
+                print("************************************\n")
+        
+        elif data[1] == "MUSIC_REGISTRED":
+            print("************************************")
+            print("SUCESSO: MUSICA CADASTRADA COM SUCESSO")
+            print("************************************\n")
+
+        else:
+            print("************************************")
+            print("WARNING: RESPOSTA NÃO ESPERADA PELO SERVIDOR")
+            print("************************************\n")
 
 
     def end_connection(self):
