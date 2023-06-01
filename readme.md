@@ -13,7 +13,12 @@
 * python -m venv .venv
 
 ## como ativar ambiente virtual no python
-* .venv/Scripts/activate
+* .venv\Scripts\activate.bat
+
+## como ativar ambiente pelo vscode
+* pressione: ctrl+shift+p
+* digite: python: Select interpreter
+* selecione o ambiente criado (.venv)
 
 ## como instalar dependencias no python
 pip install -r requirements.txt
