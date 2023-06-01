@@ -1,0 +1,7 @@
+distlib==0.3.4
+filelock==3.6.0
+numpy==1.22.4
+platformdirs==2.5.2
+pybind11==2.9.2
+six==1.16.0
+virtualenv==20.14.1
