@@ -20,6 +20,7 @@ metodos básicos
 
 
 
+
 ---------------------------------------------------------------------------------
 
 * formato das mensagens que serao passadas via sockets
