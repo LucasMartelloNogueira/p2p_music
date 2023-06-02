@@ -3,6 +3,7 @@ import socket
 import threading
 import os
 import sys
+import json
 
 
 # Project imports
@@ -42,7 +43,7 @@ class Server(IServer):
         self.clients_dataframe = self.get_client_dataframe()
         self.music_dataframe = self.get_music_dataframe()
         self.current_free_port = self.get_current_free_port()
-        self.active_connections = []
+        self.active_connections : list[Connection] = []
 
         self.start()
  
@@ -138,20 +139,26 @@ class Server(IServer):
                             print("quis registrar musica")
                             song_name = data_list[2]
                             self.register_song(current_conection, _socket, song_name)
-                            
+
+                        if data_list[1] == "VIEW_REGISTERS":
+                            print("************************************")
+                            print(f"cliente {current_conection.client_ip} quis ver registros")
+                            print("************************************\n")
+                            self.get_connected_clients_musics(_socket)
 
                 except ConnectionResetError:
                     print("************************************")
                     print("CONEXAO PERDIDA")
                     print("dados do cliente")
-                    print(f"cliente: ip = {current_conection.client_ip} / porta = {current_conection.client_port}")
+                    print(f"cliente: ip = {current_conection.client_ip} / porta = {current_conection.server_port}")
                     print("************************************\n")
+                    self.active_connections.remove(current_conection)
                     _socket.close()
                     break
 
                 except TypeError:
                     print("************************************")
-                    print(f"nenhuma msg recebida de: {current_conection.client_ip} / porta = {current_conection.client_port}")
+                    print(f"nenhuma msg recebida de: {current_conection.client_ip} / porta = {current_conection.server_port}")
                     print("************************************\n")
 
 
@@ -191,6 +198,26 @@ class Server(IServer):
         socket.send(bytes(msg, "utf-8"))
         
         
+    def get_connected_clients_musics(self, socket: socket.socket):
+
+        data = {"users": []}
+
+        for connection in self.active_connections:
+            user = {"ip": connection.client_ip}
+            filt = (self.music_dataframe["ip"] == connection.client_ip) & (self.music_dataframe["port"] == connection.server_port)
+            musics = list(self.music_dataframe.loc[filt, "song_name"].values)
+            if len(musics) > 0:
+                user["musics"] = musics
+                data["users"].append(user)
+
+        data_str = json.dumps(data)
+        size = sys.getsizeof(data_str)
+        msg = f"OP/NEXT_MSG_SIZE/{size}"
+        socket.send(bytes(msg, "utf-8"))
+        response = socket.recv(Constants.msg_max_size).decode("utf-8")
+        if response == "OP/ACK":
+            socket.send(bytes(data_str, "utf-8"))
+            
 
     def start(self):
         self.entry_socket.bind((self.ip, self.entry_port))
