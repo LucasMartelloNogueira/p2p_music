@@ -42,7 +42,7 @@ class Server(IServer):
         self.current_free_port = self.get_current_free_port()
         self.active_connections = []
 
-        self.start()
+        # self.start()
  
     def get_current_free_port(self):
         return self.entry_port + self.dataframe.shape[0] + 1
