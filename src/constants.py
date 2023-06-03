@@ -5,4 +5,4 @@ class Constants:
     localhost_ip = "26.2.0.47"
     server_port = 8080
     request_port_msg = "REQUEST_NEW_PORT"
-    msg_max_size = 256 # bytes
+    msg_max_size = 2048 # bytes
