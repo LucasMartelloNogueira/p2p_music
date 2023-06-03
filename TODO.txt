@@ -1,6 +1,8 @@
 -----------------------------------------------------------------
 ** Casos de uso **
 
+Área reservada para anotar casos de uso do projeto
+
 * Cliente 
 1- criação de conexão entre clientes e servidor por meio de sockets (ok)
 2- o cliente deve ser capaz de se registrar no servidor (ok)
@@ -8,17 +10,19 @@
 
 * Servidor
 1- O servidor deve ser capaz de aceitar varios clientes simultaniamente (ok)
-2- O servidor deve armazenar em uma tabela os clientes e as músicas que eles possuem
+2- O servidor deve armazenar em uma tabela os clientes e as músicas que eles possuem (ok)
 3- O servidor deve mandar uma mensagem informando que o registro de um cliente foi feito (ok)
 4- O Servidor deve, caso o usuário já esteja cadastrado e tente realizar um cadastro, informar que ele já está cadastrado (ok)
-  - impossível de acontecer no modelo adotado, o servidor que escolhe a porta que vai utilizar utilizada pelo cliente
-5- O Servidor deve enviar ao um cliente a lista de nós conectados e as músicas que eles possuem
-6- O servidor deve, caso o cliente deseje encerrar uma conexão, responder ao pedido de encerramento e fechar o socket
+  - impossível de acontecer no modelo adotado, o servidor que escolhe a porta que vai utilizar utilizada pelo cliente (ok)
+5- O Servidor deve enviar ao um cliente a lista de nós conectados e as músicas que eles possuem (ok)
+6- O servidor deve, caso o cliente deseje encerrar uma conexão, responder ao pedido de encerramento e fechar o socket (ok)
 
 
 
 
 -----------------------------------------------------------------
-BUGS:
+BUGS
+
+área reservada para anotar bugs conhecidos
 
 - nenhum bug conhecido no momento
