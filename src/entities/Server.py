@@ -131,7 +131,7 @@ class Server(IServer):
                         # print(f"DATA = {data}")
                         data_list = data.split("/")
                         if data_list[1] == "END_CONNECTION":
-                            self.end_client_connection(current_conection)
+                            self.end_client_connection(current_conection, _socket)
                             _socket.close()
                             break
                         
@@ -162,12 +162,14 @@ class Server(IServer):
                     print("************************************\n")
 
 
-    def end_client_connection(self, conection):
+    def end_client_connection(self, conection, socket: socket.socket):
         print("************************************")
         print("ENCERRANDO CONEXÃO")
         print("dados da conexão encerrada")
         print(f"cliente: ip = {conection.client_ip} / porta = {conection.client_port}")
         print("************************************\n")
+
+        socket.send(bytes("DATA/ACK_END_CONNECTION", "utf-8"))
         self.active_connections.remove(conection)
 
 

@@ -158,12 +158,12 @@ class Client:
 
 
     def end_connection(self):
-        # TODO: implement this
-        # has to send msg to server informing that will disconnect
-
         msg = "OP/END_CONNECTION"
         self.socket.send(bytes(msg, "utf-8"))
         print("************************************")
         print("ENCERRANDO A CONEXÃO")
         print("************************************")
+        response = self.socket.recv(Constants.msg_max_size).decode("utf-8")
+        if response == "DATA/ACK_END_CONNECTION":
+            print("servidor reconheceu fim de conexao")
         self.socket.close()
