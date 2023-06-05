@@ -40,6 +40,7 @@ class Client:
         print("************************************")
         print("REGISTRO CRIADO COM SUCESSO")
         print("************************************\n")
+        return("SUCCESS")
 
     
     def connect_to_server(self, server_ip=Constants.localhost_ip):
@@ -56,40 +57,42 @@ class Client:
             print("************************************\n")
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.socket.connect((server_ip, int(self.connection_port)))
+            return("SUCCESS")
         else:
             print(f"não foi possivel conectar ao servidor = {server_response}")
+            return(f"Não foi possivel conectar ao servidor = {server_response}")
             
 
     def start(self):
         # primeira conexao
         # recebendo do servidor a porta que sera usada para conexao de fato
         if self.connection_port is None:
-            self.first_connection()
+            return self.first_connection()
         
-        self.connect_to_server()
+        return self.connect_to_server()
 
-        if self.socket is not None:
-            with self.socket as sc:
-                while True:
-                    print("************************************")
-                    print("SELECIONE UMA OPÇÃO")
-                    print("1 - encerrar conexao")
-                    print("2 - registrar musica")
-                    print("3 - ver musicas de pessoas online")
-                    print("************************************")
+        # if self.socket is not None:
+        #     with self.socket as sc:
+        #         while True:
+        #             print("************************************")
+        #             print("SELECIONE UMA OPÇÃO")
+        #             print("1 - encerrar conexao")
+        #             print("2 - registrar musica")
+        #             print("3 - ver musicas de pessoas online")
+        #             print("************************************")
 
-                    options = {
-                        1: self.end_connection, 
-                        2: self.register_song,
-                        3: self.view_server_registers
-                    }
+        #             options = {
+        #                 1: self.end_connection, 
+        #                 2: self.register_song,
+        #                 3: self.view_server_registers
+        #             }
 
-                    opt = int(input("digite a opção escolhida: "))
+        #             opt = int(input("digite a opção escolhida: "))
 
-                    if opt in options:
-                        options[opt]()
-                        if opt == 1:
-                            break
+        #             if opt in options:
+        #                 options[opt]()
+        #                 if opt == 1:
+        #                     break
 
             #     while True:
             #         msg = input("digite a sua msg: ")
@@ -114,14 +117,15 @@ class Client:
             size = int(data[2])
             json_data = json.loads(self.socket.recv(size).decode("utf-8"))
             print(json.dumps(json_data, indent=4))
+            return (json.dumps(json_data, indent=4))
 
         
 
-    def register_song(self):
-        print("************************************")
-        song_name = input("digite o nome da musica que deseja registrar: ")
-        print("************************************\n")
-        msg = f"OP/REGISTER_SONG/{song_name}"
+    def register_song(self, songName):
+        # print("************************************")
+        # song_name = input("digite o nome da musica que deseja registrar: ")
+        # print("************************************\n")
+        msg = f"OP/REGISTER_SONG/{songName}"
 
         self.socket.send(bytes(msg, "utf-8"))
         response = self.socket.recv(Constants.msg_max_size).decode("utf-8")
@@ -132,21 +136,25 @@ class Client:
                 print("************************************")
                 print("ERRO: MUSICA JÁ CADASTRADA")
                 print("************************************\n")
+                return("ERRO: MUSICA JÁ CADASTRADA")
             
             if data[1] == "UNEXPECTED_ERROR":
                 print("************************************")
                 print("ERRO: NÃO FOI POSSIVEL REGISTAR MUSICA / ERRO INESPERADO")
                 print("************************************\n")
+                return("ERRO: NÃO FOI POSSIVEL REGISTAR MUSICA / ERRO INESPERADO")
         
         elif data[1] == "MUSIC_REGISTRED":
             print("************************************")
             print("SUCESSO: MUSICA CADASTRADA COM SUCESSO")
             print("************************************\n")
+            return("SUCCESS")
 
         else:
             print("************************************")
             print("WARNING: RESPOSTA NÃO ESPERADA PELO SERVIDOR")
             print("************************************\n")
+            return("WARNING: RESPOSTA NÃO ESPERADA PELO SERVIDOR")
 
 
     def end_connection(self):
