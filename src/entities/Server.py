@@ -251,3 +251,7 @@ class Server(IServer):
                 connection.send(bytes(msg, "utf-8"))
 
             connection.close()
+
+    def list_songs(self):
+        print(self.music_dataframe)
+        return(self.music_dataframe)

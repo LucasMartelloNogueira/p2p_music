@@ -33,6 +33,7 @@ class Gui(Frame):
         self.registerSongButton = Button(self.registerSongFrame, text="Register Song",  width=20, command=self.registerSong)
         self.viewServerRegistersButton = Button(self.clientFrame, text="Available Songs",  width=20, command=self.viewServerRegisters)
         self.endConnectionButton = Button(self.clientFrame, text="End Connection",  width=20, command=self.endConnection)
+        self.listSongsButton = Button(self.mainFrame, text="List AVailable Songs",  width=20, command=self.listSongs)
 
         self.orLabel = Label(self.commandFrame, text="or")
 
@@ -52,12 +53,13 @@ class Gui(Frame):
         logEntry.pack()
 
     def runServer(self):
-        server = Server()
-        self.serverThread = threading.Thread(target=server.start)
+        self.server = Server()
+        self.serverThread = threading.Thread(target=self.server.start)
         self.serverThread.start()
         self.commandFrame.pack_forget()
+        self.listSongsButton.pack()
         self.logFrame.pack()
-        self.log("Escutando por clientes na porta: " + str(server.entry_port))
+        self.log("Escutando por clientes na porta: " + str(self.server.entry_port))
 
     def register(self):
         self.client = Client(connection_port=None)
@@ -107,3 +109,6 @@ class Gui(Frame):
         for entry in self.logArray:
             entry.destroy()
         self.logArray = []
+
+    def listSongs(self):
+        self.log("\n" + str(self.server.list_songs()))
