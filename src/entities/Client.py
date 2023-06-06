@@ -2,7 +2,6 @@ from src.constants import Constants
 
 import socket
 import json
-import colorama
 
 
 """
