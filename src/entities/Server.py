@@ -45,7 +45,7 @@ class Server(IServer):
         self.current_free_port = self.get_current_free_port()
         self.active_connections : list[Connection] = []
 
-        self.start()
+        # self.start()
  
 
     def get_current_free_port(self):
@@ -249,3 +249,7 @@ class Server(IServer):
                 connection.send(bytes(msg, "utf-8"))
 
             connection.close()
+
+    def list_songs(self):
+        print(self.music_dataframe)
+        return(self.music_dataframe)
