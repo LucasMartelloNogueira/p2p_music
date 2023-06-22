@@ -119,7 +119,6 @@ class Client:
             return (json.dumps(json_data, indent=4))
 
         
-
     def register_song(self, songName):
         # print("************************************")
         # song_name = input("digite o nome da musica que deseja registrar: ")

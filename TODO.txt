@@ -7,6 +7,9 @@
 1- criação de conexão entre clientes e servidor por meio de sockets (ok)
 2- o cliente deve ser capaz de se registrar no servidor (ok)
 3- o cliente deve ser capaz de pedir encerramento da conexão (ok)
+4- (Cliente pede música)Requisitar um arquivo de áudio (.mp3, .wav, etc.) a um determinado nó (outro cliente), informando a porta em que o conteúdo será recebido;
+5- (Cliente entrega música) Atender a requisição do cliente enviando o conteúdo por streaming na porta indicada pelo cliente. Isso quer dizer que a reprodução da mídia no cliente deve ser iniciada a partir do momento que os dados começam a chegar. Para isso, deve-se usar o protocolo UDP;
+6- Caso o arquivo solicitado não esteja disponível, enviar mensagem ao cliente informando esta condição;
 
 * Servidor
 1- O servidor deve ser capaz de aceitar varios clientes simultaniamente (ok)
@@ -17,6 +20,12 @@
 5- O Servidor deve enviar ao um cliente a lista de nós conectados e as músicas que eles possuem (ok)
 6- O servidor deve, caso o cliente deseje encerrar uma conexão, responder ao pedido de encerramento e fechar o socket (ok)
 
+* Misc (opcinal)
+
+1- adaptar para cada msg ser um json
+2- fix de problema que servidor tem que mudar de porta para cada cliente
+3- melhorias na interface grafica
+4- criação de make file
 
 
 
