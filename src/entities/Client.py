@@ -1,7 +1,9 @@
-from src.constants import Constants
-
 import socket
 import json
+import threading
+
+from src.constants import Constants
+
 
 
 """
@@ -17,6 +19,7 @@ class Client:
         self.name = name
         self.ip = socket.gethostbyname(socket.gethostname())
         self.connection_port = connection_port
+        self.client_conn_port = Constants.MUSIC_EXCHANGE_PORT
         self.socket = None
 
         self.start()
@@ -62,46 +65,67 @@ class Client:
             return(f"Não foi possivel conectar ao servidor = {server_response}")
             
 
+    
+
+
+    def listen_to_clients(self):
+        _socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        _socket.bind((self.ip, self.client_conn_port))
+        _socket.listen()
+
+        while True:
+            conn, addr = _socket.accept()
+            data = conn.recv(Constants.msg_max_size).decode("utf-8").split("/")
+            
+
+            if data[0] == "OP" and data[1] == "REQUEST_SONG":
+                pass
+
+    
+    def server_interaction(self):
+        if self.socket is not None:
+            with self.socket as sc:
+                while True:
+                    print("************************************")
+                    print("SELECIONE UMA OPÇÃO")
+                    print("1 - encerrar conexao")
+                    print("2 - registrar musica")
+                    print("3 - ver musicas de pessoas online")
+                    print("************************************")
+
+                    options = {
+                        1: self.end_connection, 
+                        2: self.register_song,
+                        3: self.view_server_registers
+                    }
+
+                    opt = int(input("digite a opção escolhida: "))
+
+                    if opt in options:
+                        options[opt]()
+                        if opt == 1:
+                            break
+
+                while True:
+                    msg = input("digite a sua msg: ")
+                    if len(msg) == 0:
+                        break
+                    sc.send(bytes(msg, "utf-8"))
+                    server_msg = sc.recv(1024).decode("utf-8")
+                    print(f"msg do server: {server_msg}")
+
+
     def start(self):
         # primeira conexao
         # recebendo do servidor a porta que sera usada para conexao de fato
         if self.connection_port is None:
-            return self.first_connection()
+            self.first_connection()
         
-        return self.connect_to_server()
+        self.connect_to_server()
 
-        # if self.socket is not None:
-        #     with self.socket as sc:
-        #         while True:
-        #             print("************************************")
-        #             print("SELECIONE UMA OPÇÃO")
-        #             print("1 - encerrar conexao")
-        #             print("2 - registrar musica")
-        #             print("3 - ver musicas de pessoas online")
-        #             print("************************************")
+        threading.Thread(target=self.server_interaction, args=()).start
+        threading.Thread(target=self.listen_to_clients, args=()).start
 
-        #             options = {
-        #                 1: self.end_connection, 
-        #                 2: self.register_song,
-        #                 3: self.view_server_registers
-        #             }
-
-        #             opt = int(input("digite a opção escolhida: "))
-
-        #             if opt in options:
-        #                 options[opt]()
-        #                 if opt == 1:
-        #                     break
-
-            #     while True:
-            #         msg = input("digite a sua msg: ")
-            #         if len(msg) == 0:
-            #             break
-            #         sc.send(bytes(msg, "utf-8"))
-            #         server_msg = sc.recv(1024).decode("utf-8")
-            #         print(f"msg do server: {server_msg}")
-
-            # self.socket.close()
         
 
     def view_server_registers(self):
@@ -119,11 +143,11 @@ class Client:
             return (json.dumps(json_data, indent=4))
 
         
-    def register_song(self, songName):
+    def register_song(self, song_name):
         # print("************************************")
         # song_name = input("digite o nome da musica que deseja registrar: ")
         # print("************************************\n")
-        msg = f"OP/REGISTER_SONG/{songName}"
+        msg = f"OP/REGISTER_SONG/{song_name}"
 
         self.socket.send(bytes(msg, "utf-8"))
         response = self.socket.recv(Constants.msg_max_size).decode("utf-8")
@@ -153,6 +177,19 @@ class Client:
             print("WARNING: RESPOSTA NÃO ESPERADA PELO SERVIDOR")
             print("************************************\n")
             return("WARNING: RESPOSTA NÃO ESPERADA PELO SERVIDOR")
+
+
+    # TODO: implementar essa func
+    def request_song(self, song_name, port):
+        """
+        formato da msg de requisição de musica : OP/REQUEST_SONG/<nome_musica>
+        """
+        pass
+
+
+    # TODO: implement this
+    def send_song(self, song_name):
+        pass
 
 
     def end_connection(self):

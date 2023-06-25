@@ -162,6 +162,10 @@ class Server(IServer):
                     print("************************************\n")
 
 
+    def client_connection_v2(_socket: socket.socket, address):
+        pass
+
+
     def end_client_connection(self, conection, socket: socket.socket):
         print("************************************")
         print("ENCERRANDO CONEXÃO")

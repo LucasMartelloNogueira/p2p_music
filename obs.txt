@@ -45,3 +45,9 @@ os identificadores podem ser:
 
 - primeiro deve estabelecer uma conexão
 - cliente manda msg de contro
+
+---------------------------------------------------------------------------------
+
+diferenças de socket tcp e udp do python:
+
+- udp não tem metodos listen e accept

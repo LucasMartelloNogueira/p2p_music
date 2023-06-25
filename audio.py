@@ -11,7 +11,8 @@ def audio_ex():
     :return None
     """
 
-    wav_file = open("assets\wav_files\wav_file_1mb.wav", "rb")
+    wav_file = open("assets\\music\\wav_file_1mb.wav", "rb")
+    wav_file = open("assets\\music\\Uplifting_Motivational_Pop_Anthem_Coldplay_-_DimmyPlus.mp3", "rb")
     wf = wave.open(wav_file, 'rb')
 
     # instantiate PyAudio (1)
@@ -43,3 +44,5 @@ def audio_ex():
 
     # close PyAudio (7)
     p.terminate()
+
+audio_ex()
