@@ -1,47 +1,41 @@
-import pyaudio
 import socket
-from threading import Thread
+import threading, wave, pyaudio, time
 
-frames = []
+host_name = socket.gethostname()
+host_ip = "localhost"
+print(host_ip)
+port = 9633
 
-def udpStream(CHUNK):
 
-    udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    udp.bind(("localhost", 12345))
+def audio_stream_UDP():
+    BUFF_SIZE = 65536
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, BUFF_SIZE)
 
-    while True:
-        soundData, addr = udp.recvfrom(CHUNK * CHANNELS * 2)
-        frames.append(soundData)
-
-    udp.close()
-
-def play(stream, CHUNK):
-    BUFFER = 10
-    while True:
-            if len(frames) == BUFFER:
-                while True:
-                    stream.write(frames.pop(0), CHUNK)
-
-if __name__ == "__main__":
-    FORMAT = pyaudio.paInt16
-    CHUNK = 1024
-    CHANNELS = 2
-    RATE = 44100
-
+    server_socket.bind((host_ip, (port)))
+    CHUNK = 10 * 1024
+    wf = wave.open("temp.wav")
     p = pyaudio.PyAudio()
+    print("server listening at", (host_ip, (port)), wf.getframerate())
+    stream = p.open(
+        format=p.get_format_from_width(wf.getsampwidth()),
+        channels=wf.getnchannels(),
+        rate=wf.getframerate(),
+        input=True,
+        frames_per_buffer=CHUNK,
+    )
 
-    stream = p.open(format=FORMAT,
-                    channels = CHANNELS,
-                    rate = RATE,
-                    output = True,
-                    frames_per_buffer = CHUNK,
-                    )
+    data = None
+    sample_rate = wf.getframerate()
+    while True:
+        msg, client_addr = server_socket.recvfrom(BUFF_SIZE)
+        print("GOT connection from ", client_addr, msg)
 
-    Ts = Thread(target = udpStream, args=(CHUNK,))
-    Tp = Thread(target = play, args=(stream, CHUNK,))
-    Ts.setDaemon(True)
-    Tp.setDaemon(True)
-    Ts.start()
-    Tp.start()
-    Ts.join()
-    Tp.join()
+        while True:
+            data = wf.readframes(CHUNK)
+            server_socket.sendto(data, client_addr)
+            time.sleep(0.8 * CHUNK / sample_rate)
+
+
+t1 = threading.Thread(target=audio_stream_UDP, args=())
+t1.start()
