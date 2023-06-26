@@ -2,6 +2,7 @@ import socket
 import threading
 import json
 import sys
+import time
 
 from src.constants import Constants
 
@@ -71,21 +72,24 @@ class Server:
     def playV2(self, stream):
 
         while True:
+            print("preso aqui")
             if len(self.frames) >= Constants.MUSIC_BUFFER_SIZE:
                 # while (len(self.frames) > 0):
-                for i in range(Constants.MUSIC_BUFFER_SIZE):
+                for _ in range(Constants.MUSIC_BUFFER_SIZE):
                     stream.write(self.frames.pop(0))
 
+
+
+    
 
 
     def start(self):
         # self.socket.listen()
         print(f"esperando por dados na porta {self.server_port}")
-        # while True:
-            # conn, addr = self.socket.accept()
-            
+        while True:
+            conn, addr = self.socket.accept()
             # thread para msgs / teste para clients com ip/porta fixo e varios clientes
-            # threading.Thread(target=self.client_conn, args=(conn, addr)).start()
+            threading.Thread(target=self.client_conn, args=(conn, addr)).start()
 
 
         tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

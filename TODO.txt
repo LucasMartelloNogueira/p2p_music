@@ -22,8 +22,8 @@
 
 * Misc (opcinal)
 
-1- adaptar para cada msg ser um json
-2- fix de problema que servidor tem que mudar de porta para cada cliente
+1- fix de problema que servidor tem que mudar de porta para cada cliente
+2- adaptar para cada msg ser um json
 3- melhorias na interface grafica
 4- criação de make file
 
@@ -35,3 +35,4 @@ BUGS
 área reservada para anotar bugs conhecidos
 
 - nenhum bug conhecido no momento
+
