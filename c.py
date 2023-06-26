@@ -9,7 +9,7 @@ def udpStream():
 
     while True:
         if len(frames) > 0:
-            udp.sendto(frames.pop(0), ("127.0.0.1", 12345))
+            udp.sendto(frames.pop(0), ("localhost", 12345))
 
     udp.close()
 
