@@ -1,10 +1,11 @@
 import socket
 import json
 import threading
+import queue
 
 from src.constants import Constants
 
-
+import pyaudio
 
 """
 possiveis msgs do client:
@@ -15,12 +16,15 @@ possiveis msgs do client:
 
 class Client:
 
-    def __init__(self, name="fulano", connection_port=None) -> None:
+    def __init__(self, name="fulano", connection_port=None, music_sender_tcp_port=20_000, 
+                 music_receiver_tcp_port=21_000, music_udp_port=22_000):
         self.name = name
         self.ip = socket.gethostbyname(socket.gethostname())
         self.connection_port = connection_port
-        self.client_conn_port = Constants.MUSIC_EXCHANGE_PORT
         self.socket = None
+        self.music_sender_tcp_port = music_sender_tcp_port
+        self.music_receiver_tcp_port = music_receiver_tcp_port
+        self.music_udp_port = music_udp_port
 
         self.start()
 
@@ -65,21 +69,15 @@ class Client:
             return(f"Não foi possivel conectar ao servidor = {server_response}")
             
 
-    
-
-
+    # TODO: completar essa func, criando Thread chamando funcao de enviar musica
     def listen_to_clients(self):
-        _socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        _socket.bind((self.ip, self.client_conn_port))
-        _socket.listen()
+        tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        tcp_sock.bind((self.ip, self.music_sender_tcp_port))
+        tcp_sock.listen()
 
         while True:
-            conn, addr = _socket.accept()
-            data = conn.recv(Constants.msg_max_size).decode("utf-8").split("/")
-            
-
-            if data[0] == "OP" and data[1] == "REQUEST_SONG":
-                pass
+            connection, address = tcp_sock.accept()
+            # 
 
     
     def server_interaction(self):
@@ -179,16 +177,83 @@ class Client:
             return("WARNING: RESPOSTA NÃO ESPERADA PELO SERVIDOR")
 
 
+    def receive_and_play_song(self, music_name, other_client_ip, music_req_port):
+        """
+        faz a requisição de uma determinada musica para outro cliente
+        """
+        other_client_address = (other_client_ip, self.client_conn_port)
+        q = queue.Queue(maxsize=100_000)
+        
+        msg = { 
+            "music_name": music_name,
+            "udp_port": music_req_port
+        }
+
+        tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        tcp_sock.connect(other_client_address)
+        tcp_sock.send(bytes(json.dumps(msg), "utf-8"))
+
+        response = json.loads(tcp_sock.recv(Constants.msg_max_size).decode("utf-8"))
+        stream = None
+
+        if response["status"] == "OK":
+            p = pyaudio.PyAudio()
+            stream = p.open(
+                format=p.get_format_from_width(response["width"]),
+                channels=response["num_chanels"],
+                rate=response["frame_rate"],
+                output=True
+            )
+        else:
+            print("nao foi possivel obter a musica desejada")
+
+
+        udp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        udp_sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, Constants.UDP_BUFFER_SIZE)
+        udp_sock.bind()
+
+        def get_audio_data():
+            while True:
+                try:
+                    frame, _ = udp_sock.recvfrom(Constants.UDP_BUFFER_SIZE)
+                    q.put(frame)
+                except:
+                    return
+
+        t2 = threading.Thread(target=get_audio_data, args=())
+        t2.start()
+
+
+        # indicando que agr esta pronto para receber a musica
+        msg2 = {
+            "status": "ready"
+        }
+
+        tcp_sock.send(bytes(json.dumps(msg2), "utf-8"))
+        tcp_sock.close()
+
+        t2.sleep(5)  # deixand bufferizar um pouco...
+
+        while True:
+            try:
+                frame = q.get(timeout=10)
+                stream.write(frame)
+            except:
+                print("musica acabou")
+                break
+        
+        # vai fechar o socket e acabar com a thread
+        # acaba com a Thread pq gera excecao na hora de receber do socket udp pq ele vai estar fechado
+        udp_sock.close()
+        self.music_conn_udp_port -= 1
+            
+        
+    def request_music(self, music_name, other_client_ip):
+        threading.Thread(target=self.receive_and_play_song, args=(music_name, other_client_ip, self.music_conn_udp_port)).start()
+
+
     # TODO: implementar essa func
-    def request_song(self, song_name, port):
-        """
-        formato da msg de requisição de musica : OP/REQUEST_SONG/<nome_musica>
-        """
-        pass
-
-
-    # TODO: implement this
-    def send_song(self, song_name):
+    def send_music(self, conn_socket, address):
         pass
 
 
