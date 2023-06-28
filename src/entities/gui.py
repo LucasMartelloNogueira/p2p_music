@@ -63,7 +63,7 @@ class Gui(Frame):
 
     def register(self):
         self.client = Client(connection_port=None)
-        self.log(f"Registro criado com sucesso na porta {self.client.connection_port}")
+        self.log(f"Registro criado com sucesso na porta {self.client.server_conn_port}")
         # self.commandFrame.pack_forget()
         # self.clientFrame.pack()
         # self.registerSongFrame.pack()

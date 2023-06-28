@@ -162,8 +162,56 @@ class Server(IServer):
                     print("************************************\n")
 
 
-    def client_connection_v2(_socket: socket.socket, address):
-        pass
+    def client_connection_v2(self, _socket : socket.socket, server_addr, client_addr):
+        server_ip, server_port = server_addr
+        client_ip, client_port = client_addr
+        current_conection = Connection(server_ip, server_port, client_ip, client_port)
+        self.active_connections.append(current_conection)
+        
+        print("************************************")
+        print(f"CONECTADO COM O CLIENTE")
+        print("dados da conexão")
+        print(f"Servidor: ip = {server_ip} / porta = {server_port}")
+        print(f"cliente: ip = {client_ip} / porta = {client_port}")
+        print("************************************\n")
+        
+        with _socket as sc:
+            while True:
+                try:
+                    data = sc.recv(Constants.msg_max_size).decode("utf-8")
+                    if data:
+                        # print(f"DATA = {data}")
+                        data_list = data.split("/")
+                        if data_list[1] == "END_CONNECTION":
+                            self.end_client_connection(current_conection, _socket)
+                            _socket.close()
+                            break
+                        
+                        if data_list[1] == "REGISTER_SONG":
+                            print("quis registrar musica")
+                            song_name = data_list[2]
+                            self.register_song(current_conection, _socket, song_name)
+
+                        if data_list[1] == "VIEW_REGISTERS":
+                            print("************************************")
+                            print(f"cliente {current_conection.client_ip} quis ver registros")
+                            print("************************************\n")
+                            self.get_connected_clients_musics(_socket)
+
+                except ConnectionResetError:
+                    print("************************************")
+                    print("CONEXAO PERDIDA")
+                    print("dados do cliente")
+                    print(f"cliente: ip = {current_conection.client_ip} / porta = {current_conection.server_port}")
+                    print("************************************\n")
+                    self.active_connections.remove(current_conection)
+                    _socket.close()
+                    break
+
+                except TypeError:
+                    print("************************************")
+                    print(f"nenhuma msg recebida de: {current_conection.client_ip} / porta = {current_conection.server_port}")
+                    print("************************************\n")
 
 
     def end_client_connection(self, conection, socket: socket.socket):
@@ -225,6 +273,65 @@ class Server(IServer):
             socket.send(bytes(data_str, "utf-8"))
             
 
+    def get_new_client_port(self):
+        last_created_port = max(self.clients_dataframe.loc[:, "port"].values)
+        return last_created_port + 1
+
+
+    def check_client_connection_v2(self, ip, port) -> dict:
+        """
+        verifica se o client pode se conectar
+        :return: [bool]: True se o cliente pode se conectar, False caso contrario
+        """
+        
+        # vendo se o client usou a porta padrão 8080
+        # usar a porta padrão indica que o cliente não está registrado
+        if port == 59123:
+            response = {
+                "permission": False, 
+                "reason": "first connection - not registered",
+                "new_port": str(self.get_new_client_port())
+            }
+
+            self.register_client(ip, response["new_port"], "novo cliente")
+            return {"permission": False, "reason": "not registered"}
+
+        # vendo se o cliente usou uma porta não cadastrada
+        filt = (self.clients_dataframe["ip"] == ip) & (self.clients_dataframe["port"] == int(port))
+        df = self.clients_dataframe.loc[filt]
+        
+        if df.shape[0] == 0:
+            return {"permission": False, "reason": "not registered"}
+
+        # verificando se o cliente usou uma porta que já está em uso
+        for conn in self.active_connections:
+            if conn.client_ip == ip and conn.client_port == port:
+                return {"permission": False, "reason": "already connected"}
+        
+        return {"permission": True, "reason": "client accepted"}
+
+
+    def start_v2(self):
+        self.entry_socket.bind((self.ip, self.entry_port))
+        self.entry_socket.listen()
+
+        print("escutando por clientes...")
+
+        while True:
+            connection, address = self.entry_socket.accept()
+            print(f"conectado com cliente: {address}")
+            ip, port = address
+            can_conn_dict = self.check_client_connection_v2(ip, port)
+            connection.send(bytes(json.dumps(can_conn_dict), "utf-8"))
+            
+            if can_conn_dict["permission"] is True:
+                thread = threading.Thread(target=self.client_connection_v2, args=(connection, Constants.server_addr, address))
+                thread.start()
+            else:
+                connection.close()
+
+
+    # não ta funcionando agr
     def start(self):
         self.entry_socket.bind((self.ip, self.entry_port))
         self.entry_socket.listen()
@@ -255,6 +362,7 @@ class Server(IServer):
                 connection.send(bytes(msg, "utf-8"))
 
             connection.close()
+
 
     def list_songs(self):
         print(self.music_dataframe)
