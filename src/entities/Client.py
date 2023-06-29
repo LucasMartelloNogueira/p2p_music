@@ -89,8 +89,14 @@ class Client:
             if response["reason"] == "first connection - not registered":
                 connection.close()
                 new_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                self.server_conn_port = response["new_port"]
-                new_sock.connect((Constants.localhost_ip, self.server_conn_port))
+                self.server_conn_port = int(float(response["new_port"]))
+                new_sock.bind((self.ip, self.server_conn_port))
+                new_sock.connect((Constants.localhost_ip, Constants.server_port))
+                data = {
+                    "tcp_port": self.music_tcp_port,
+                    "udp_port": self.music_udp_port
+                }
+                new_sock.send(bytes(json.dumps(data), "UTF-8"))
                 self.socket = new_sock
             else:
                 print("não possivel conectar ao servidor")

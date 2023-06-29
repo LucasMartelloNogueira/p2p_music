@@ -77,7 +77,7 @@ class Server(IServer):
 
 
     def register_client(self, ip, port, name):
-        new_row = {"ip": ip, "port": int(port), "name": name}
+        new_row = {"ip": ip, "port": int(float(port)), "name": name}
         new_line_index = self.clients_dataframe.shape[0]
         self.clients_dataframe.loc[new_line_index, :] = new_row
         self.clients_dataframe.to_csv("assets\\csv_files\\clients.csv", index=False)
@@ -284,7 +284,7 @@ class Server(IServer):
         :return: [bool]: True se o cliente pode se conectar, False caso contrario
         """
         
-        # vendo se o client usou a porta padrão 8080
+        # vendo se o client usou a porta padrão 59123
         # usar a porta padrão indica que o cliente não está registrado
         if port == 59123:
             response = {
@@ -294,7 +294,7 @@ class Server(IServer):
             }
 
             self.register_client(ip, response["new_port"], "novo cliente")
-            return {"permission": False, "reason": "not registered"}
+            return response
 
         # vendo se o cliente usou uma porta não cadastrada
         filt = (self.clients_dataframe["ip"] == ip) & (self.clients_dataframe["port"] == int(port))
@@ -323,6 +323,7 @@ class Server(IServer):
             ip, port = address
             data = json.loads(connection.recv(Constants.msg_max_size).decode("utf-8"))
             can_conn_dict = self.check_client_connection_v2(ip, port)
+            print(can_conn_dict)
             connection.send(bytes(json.dumps(can_conn_dict), "utf-8"))
             
             if can_conn_dict["permission"] is True:
