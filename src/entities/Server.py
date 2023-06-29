@@ -150,7 +150,7 @@ class Server(IServer):
                     print("************************************")
                     print("CONEXAO PERDIDA")
                     print("dados do cliente")
-                    print(f"cliente: ip = {current_conection.client_ip} / porta = {current_conection.server_port}")
+                    print(f"cliente: ip = {current_conection.client_ip} / porta = {current_conection.client_port}")
                     print("************************************\n")
                     self.active_connections.remove(current_conection)
                     _socket.close()
@@ -158,14 +158,14 @@ class Server(IServer):
 
                 except TypeError:
                     print("************************************")
-                    print(f"nenhuma msg recebida de: {current_conection.client_ip} / porta = {current_conection.server_port}")
+                    print(f"nenhuma msg recebida de: {current_conection.client_ip} / porta = {current_conection.client_port}")
                     print("************************************\n")
 
 
-    def client_connection_v2(self, _socket : socket.socket, server_addr, client_addr):
+    def client_connection_v2(self, _socket : socket.socket, server_addr, client_addr, client_tcp_port):
         server_ip, server_port = server_addr
         client_ip, client_port = client_addr
-        current_conection = Connection(server_ip, server_port, client_ip, client_port)
+        current_conection = Connection(server_ip, server_port, client_ip, client_port, client_tcp_port)
         self.active_connections.append(current_conection)
         
         print("************************************")
@@ -202,7 +202,7 @@ class Server(IServer):
                     print("************************************")
                     print("CONEXAO PERDIDA")
                     print("dados do cliente")
-                    print(f"cliente: ip = {current_conection.client_ip} / porta = {current_conection.server_port}")
+                    print(f"cliente: ip = {current_conection.client_ip} / porta = {current_conection.client_port}")
                     print("************************************\n")
                     self.active_connections.remove(current_conection)
                     _socket.close()
@@ -210,7 +210,7 @@ class Server(IServer):
 
                 except TypeError:
                     print("************************************")
-                    print(f"nenhuma msg recebida de: {current_conection.client_ip} / porta = {current_conection.server_port}")
+                    print(f"nenhuma msg recebida de: {current_conection.client_ip} / porta = {current_conection.client_port}")
                     print("************************************\n")
 
 
@@ -230,22 +230,22 @@ class Server(IServer):
         msg = "ERROR/UNEXPECTED_ERROR"
 
         # confere se o cliente já tem a musica cadastrada
-        filt = (self.music_dataframe["ip"] == connection.client_ip) & (self.music_dataframe["port"] == connection.server_port) & (self.music_dataframe["song_name"] == song_name)
+        filt = (self.music_dataframe["ip"] == connection.client_ip) & (self.music_dataframe["port"] == connection.client_port) & (self.music_dataframe["song_name"] == song_name)
         df = self.music_dataframe[filt]
         if df.shape[0] > 0:
             print("************************************")
             print("ERRO AO CADASTRAR MUSICA")
-            print(f"cliente: {connection.client_ip} / {connection.server_port} ja tem a música {song_name} cadastrada")
+            print(f"cliente: {connection.client_ip} / {connection.client_port} ja tem a música {song_name} cadastrada")
             print("************************************\n")
             msg = "ERROR/SONG_ALREADY_REGISTRED"
         else:
-            new_row = {"ip": connection.client_ip, "port": connection.server_port, "song_name": song_name}
+            new_row = {"ip": connection.client_ip, "port": connection.client_port, "song_name": song_name}
             n = self.music_dataframe.shape[0]
             self.music_dataframe.loc[n, :] = new_row
             self.music_dataframe.to_csv(self.get_fullpath_music_filename(), index=False)
             print("************************************")
             print("MUSICA CADASTRADA COM SUCESSO")
-            print(f"cliente: {connection.client_ip} / {connection.server_port} CADASTROU A MUSICA {song_name}")
+            print(f"cliente: {connection.client_ip} / {connection.client_port} CADASTROU A MUSICA {song_name}")
             print("************************************\n")
             msg = "DATA/MUSIC_REGISTRED"
         
@@ -257,8 +257,8 @@ class Server(IServer):
         data = {"users": []}
 
         for connection in self.active_connections:
-            user = {"ip": connection.client_ip}
-            filt = (self.music_dataframe["ip"] == connection.client_ip) & (self.music_dataframe["port"] == connection.server_port)
+            user = {"ip": connection.client_ip, "port": connection.client_tcp_port}
+            filt = (self.music_dataframe["ip"] == connection.client_ip) & (self.music_dataframe["port"] == connection.client_port)
             musics = list(self.music_dataframe.loc[filt, "song_name"].values)
             if len(musics) > 0:
                 user["musics"] = musics
@@ -321,11 +321,12 @@ class Server(IServer):
             connection, address = self.entry_socket.accept()
             print(f"conectado com cliente: {address}")
             ip, port = address
+            data = json.loads(connection.recv(Constants.msg_max_size).decode("utf-8"))
             can_conn_dict = self.check_client_connection_v2(ip, port)
             connection.send(bytes(json.dumps(can_conn_dict), "utf-8"))
             
             if can_conn_dict["permission"] is True:
-                thread = threading.Thread(target=self.client_connection_v2, args=(connection, Constants.server_addr, address))
+                thread = threading.Thread(target=self.client_connection_v2, args=(connection, Constants.server_addr, address, data["tcp_port"]))
                 thread.start()
             else:
                 connection.close()

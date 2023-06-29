@@ -21,17 +21,29 @@ class Gui(Frame):
         self.logFrame = LabelFrame(self.mainFrame, text="Log", padx=5, pady=5)
         self.clientFrame = Frame(self.mainFrame)
         self.registerSongFrame = Frame(self.clientFrame)
+        self.requestSongFrame = Frame(self.clientFrame)
 
         self.portInput = Entry(self.connectFrame, width=20)
-        self.portInput.insert(0, "PORT")
+        self.portInput.insert(0, "SERVER CONNECTION PORT")
+        self.tcpInput = Entry(self.connectFrame, width=20)
+        self.tcpInput.insert(0, "TCP PORT")
+        self.udpInput = Entry(self.connectFrame, width=20)
+        self.udpInput.insert(0, "UDP PORT")
         self.songInput = Entry(self.registerSongFrame, width=30)
         self.songInput.insert(0, "Song Name")
+        self.songRequestInput = Entry(self.requestSongFrame, width=30)
+        self.songRequestInput.insert(0, "Song Name")
+        self.songRequestIpInput = Entry(self.requestSongFrame, width=30)
+        self.songRequestIpInput.insert(0, "Client IP")
+        self.songRequestPortInput = Entry(self.requestSongFrame, width=30)
+        self.songRequestPortInput.insert(0, "Client Port")
 
         self.serverButton = Button(self.commandFrame, text="Run Server", width=20, command=self.runServer)
         self.registerButton = Button(self.commandFrame, text="Register", width=20, command=self.register)
         self.loginButton = Button(self.connectFrame, text="Connect", width=20, command=self.connect)
         self.registerSongButton = Button(self.registerSongFrame, text="Register Song",  width=20, command=self.registerSong)
         self.viewServerRegistersButton = Button(self.clientFrame, text="Available Songs",  width=20, command=self.viewServerRegisters)
+        self.requestSongButton = Button(self.requestSongFrame, text="Request Song",  width=20, command=self.requestSong)
         self.endConnectionButton = Button(self.clientFrame, text="End Connection",  width=20, command=self.endConnection)
         self.listSongsButton = Button(self.mainFrame, text="List AVailable Songs",  width=20, command=self.listSongs)
 
@@ -41,7 +53,9 @@ class Gui(Frame):
         self.commandFrame.pack()
         self.connectFrame.pack()
         self.portInput.grid(row=1, column=1)
-        self.loginButton.grid(row=1, column=2)
+        self.tcpInput.grid(row=1, column=2)
+        self.udpInput.grid(row=1, column=3)
+        self.loginButton.grid(row=1, column=4)
         self.orLabel.pack()
         self.serverButton.pack()
         self.registerButton.pack()
@@ -54,7 +68,7 @@ class Gui(Frame):
 
     def runServer(self):
         self.server = Server()
-        self.serverThread = threading.Thread(target=self.server.start)
+        self.serverThread = threading.Thread(target=self.server.start_v2)
         self.serverThread.start()
         self.commandFrame.pack_forget()
         self.listSongsButton.pack()
@@ -74,13 +88,19 @@ class Gui(Frame):
         # self.logFrame.pack()
 
     def connect(self):
-        self.client = Client(connection_port=self.portInput.get())
+        self.client = Client(self, "fulano", self.portInput.get(), self.tcpInput.get(), self.udpInput.get())
+        self.client.start_v2()
         self.commandFrame.pack_forget()
         self.logFrame.pack_forget()
         self.clientFrame.pack()
         self.registerSongFrame.pack()
+        self.requestSongFrame.pack()
         self.songInput.grid(row=1, column=1)
         self.registerSongButton.grid(row=1, column=2)
+        self.songRequestInput.grid(row=1, column=1)
+        self.songRequestIpInput.grid(row=1, column=2)
+        self.songRequestPortInput.grid(row=1, column=3)
+        self.requestSongButton.grid(row=1, column=4)
         self.viewServerRegistersButton.pack()
         self.endConnectionButton.pack()
         self.logFrame.pack()
@@ -112,3 +132,8 @@ class Gui(Frame):
 
     def listSongs(self):
         self.log("\n" + str(self.server.list_songs()))
+
+    def requestSong(self):
+        if self.client != None:
+            if self.songRequestInput.get() and self.songRequestIpInput.get():
+                self.client.request_music(self.songRequestInput.get(), self.songRequestIpInput.get(), self.songRequestPortInput.get())

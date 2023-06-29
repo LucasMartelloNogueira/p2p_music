@@ -20,8 +20,9 @@ possiveis msgs do client:
 
 class Client:
 
-    def __init__(self, name="fulano", server_conn_port=59123, music_tcp_port=20_000, music_udp_port=21_000):
+    def __init__(self, gui, name="fulano", server_conn_port=59123, music_tcp_port=20_000, music_udp_port=21_000):
         self.name = name
+        self.gui = gui
         self.ip = socket.gethostbyname(socket.gethostname())
         self.server_conn_port = int(server_conn_port)
         self.socket = None
@@ -75,6 +76,11 @@ class Client:
         connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         connection.bind((self.ip, self.server_conn_port))
         connection.connect((Constants.localhost_ip, Constants.server_port))
+        data = {
+            "tcp_port": self.music_tcp_port,
+            "udp_port": self.music_udp_port
+        }
+        connection.send(bytes(json.dumps(data), "UTF-8"))
         # print("vendo status da conexao...")
         response = json.loads(connection.recv(Constants.msg_max_size).decode("utf-8"))
         # print("obteve primeira response do server")
@@ -105,8 +111,9 @@ class Client:
             music = os.path.join("assets\music", data1["music_name"])
 
             tcp_ack_msg = {}
+            print(int(data1["port"]) == self.music_tcp_port)
 
-            if os.path.exists(music):
+            if os.path.exists(music) and int(data1["port"]) == self.music_tcp_port:
                 wf = wave.open(music, "rb")
                 tcp_ack_msg["status"] = "OK"
                 tcp_ack_msg["width"] = wf.getsampwidth()
@@ -158,26 +165,24 @@ class Client:
 
                     opt = int(input("digite a opção escolhida: "))
 
-                    match opt:
-                        case 1:
-                            self.end_connection()
-
-                        case 2:
-                            self.register_song()
-
-                        case 3:
-                            self.view_server_registers
-                            
-                        case 4:
-                            music_name = input("digite o nome da musica que deseja: ")
-                            ip_other_client = input("digite o ip do outro cliente: ")
-                            self.request_music(music_name, ip_other_client)
-                        
-                        case other:
-                            print("opção não existe!")
 
                     if opt == 1:
+                        self.end_connection()
                         break
+
+                    elif opt == 2:
+                        self.register_song()
+
+                    elif opt == 3:
+                        self.view_server_registers()
+                        
+                    elif opt == 4:
+                        music_name = input("digite o nome da musica que deseja: ")
+                        ip_other_client = input("digite o ip do outro cliente: ")
+                        self.request_music(music_name, ip_other_client)
+                    
+                    else:
+                        print("opção não existe!")
                   
                 # while True:
                 #     msg = input("digite a sua msg: ")
@@ -189,7 +194,7 @@ class Client:
 
 
     def start_v2(self):
-
+        
         self.connect_to_server_v2()
 
         print("definiu o socket")
@@ -273,16 +278,17 @@ class Client:
             return("WARNING: RESPOSTA NÃO ESPERADA PELO SERVIDOR")
 
 
-    def receive_and_play_song(self, music_name, other_client_ip):
+    def receive_and_play_song(self, music_name, other_client_ip, other_client_tcp_port):
         """
         faz a requisição de uma determinada musica para outro cliente
         """
-        other_client_address = (other_client_ip, self.music_tcp_port)
+        other_client_address = (other_client_ip, int(other_client_tcp_port))
         q = queue.Queue(maxsize=100_000)
         
         msg = { 
             "music_name": music_name,
-            "udp_port": self.music_udp_port
+            "udp_port": self.music_udp_port,
+            "port": other_client_tcp_port
         }
 
         tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -340,11 +346,12 @@ class Client:
             udp_sock.close()
         else:
             print("nao foi possivel obter a musica desejada")
+            self.gui.log("Não foi possível obter a música desejada")
             tcp_sock.close()
             
         
-    def request_music(self, music_name, other_client_ip):
-        threading.Thread(target=self.receive_and_play_song, args=(music_name, other_client_ip)).start()
+    def request_music(self, music_name, other_client_ip, other_client_port):
+        threading.Thread(target=self.receive_and_play_song, args=(music_name, other_client_ip, other_client_port)).start()
 
 
     def end_connection(self):
