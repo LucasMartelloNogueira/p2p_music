@@ -90,6 +90,7 @@ class Client:
                 connection.close()
                 new_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 self.server_conn_port = int(float(response["new_port"]))
+                self.gui.log(f"Registro criado na porta {int(float(response['new_port']))}")
                 new_sock.bind((self.ip, self.server_conn_port))
                 new_sock.connect((Constants.localhost_ip, Constants.server_port))
                 data = {
